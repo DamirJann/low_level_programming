@@ -7,8 +7,19 @@ exit:
     ret 
 
 ; Принимает указатель на нуль-терминированную строку, возвращает её длину
+; arg1 - rdi(pointer to string)
+; ret val - rax(size of string)
 string_length:
     xor rax, rax
+.loop:
+    ; [rdi+rax]  ~ *(s + i)
+    cmp byte [rdi + rax], 0
+    je .end
+
+    inc rax
+    jmp .loop
+
+.end:
     ret
 
 ; Принимает указатель на нуль-терминированную строку, выводит её в stdout
