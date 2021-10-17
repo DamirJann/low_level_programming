@@ -11,20 +11,36 @@ exit:
 ; ret val - rax(size of string)
 string_length:
     xor rax, rax
-.loop:
-    ; [rdi+rax]  ~ *(s + i)
-    cmp byte [rdi + rax], 0
-    je .end
+    .loop:
+        ; [rdi+rax]  ~ *(s + i)
+        cmp byte [rdi + rax], 0
+        je .end
 
-    inc rax
-    jmp .loop
+        inc rax
+        jmp .loop
 
-.end:
-    ret
+    .end:
+        ret
 
 ; Принимает указатель на нуль-терминированную строку, выводит её в stdout
+; print_string - caller-save. It means that we need to save rdi and rax? before execution string_length
+; arg1 - rdi(pointer to string)
 print_string:
-    xor rax, rax
+    push rdi
+
+    call string_length 
+
+    pop rdi
+
+
+    mov rdx, rax        ; take string length and put it for write call
+    mov rsi, rdi        ; put pointer to string for write call
+    mov rax, 1          ; syscall number(for write = 1)
+    mov rdi, 1          ; stdout descriptor
+    
+    syscall
+    
+    
     ret
 
 ; Принимает код символа и выводит его в stdout
@@ -94,6 +110,39 @@ parse_int:
 ; Принимает указатель на строку, указатель на буфер и длину буфера
 ; Копирует строку в буфер
 ; Возвращает длину строки если она умещается в буфер, иначе 0
+; arg1 - rdi(pointer to string)
+; arg2 - rsi(pointer to buffer)
+; arg3 - rdx(length of buffer);
+; ret val1 - rax(length of buffer it is ok, otherwise, zero)
 string_copy:
-    xor rax, rax
-    ret
+    push rdi
+    call string_length
+    pop rdi
+
+    ;string size > buffer size
+    cmp rax, rdx
+    ja .end_with_zero
+
+    mov rcx, 0
+    .loop: 
+        cmp rcx, rax
+        ; TODO find out why it doesn't work with ja
+        jg .end
+       
+        mov byte r8, [rdi + rcx]
+        mov [rsi + rcx], byte r8
+    
+        inc rcx
+        jmp .loop 
+
+    
+    .end_with_zero:
+        mov rax, 0
+        jmp .end
+    
+    .end:
+        ret
+
+
+
+    
