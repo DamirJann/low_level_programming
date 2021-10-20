@@ -40,12 +40,23 @@ print_string:
     
     syscall
     
-    
     ret
 
 ; Принимает код символа и выводит его в stdout
 print_char:
-    xor rax, rax
+
+    mov rdx, 1  
+    
+    ; TODO 
+    ; change it. Could I use pointer to r8 as a buffer? Why stack? 
+    push rdi
+    lea rsi, [rsp]       ; put pointer to string for write call
+    pop r8
+    
+    mov rax, 1          ; syscall number(for write = 1)
+    mov rdi, 1          ; stdout descriptor
+    syscall
+    
     ret
 
 ; Переводит строку (выводит символ с кодом 0xA)
@@ -57,12 +68,92 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    xor rax, rax
+    call uint_s1
+
     ret
+
+uint_s1:
+    call read_char
+
+    cmp rax, '-'
+    je uint_s2
+
+    cmp rax, 0
+    je uint_s3
+
+
+    push rdi
+    push rsi
+    push rdx
+    push rax
+    mov rdi, 1
+    mov rsi, 10
+    mov rdx, rax
+    call is_in_interval
+    cmp rax, 1
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rax
+
+    je uint_s4
+
+    jmp .error
+
+    error:
+        ret
+    
+
+
+    cmp rax,  
+
+
+    ret
+uint_s2:
+    ret
+uint_s3:
+    ret
+uint_s4:
+    ret
+uint_s5:
+    ret
+
+; return 0 if number in interval [left border, right border)
+; rdi - left border 
+; rsi - right border
+; rdx - number
+; rax - return value, 0 - false, 1 - true
+is_in_interval:
+    ; check if number < left_border
+    cmp rdx, rdi
+    jl .end_with_false
+
+    ; check if number >= rigth boreder
+    cmp rdx, right_border
+    jge .end_with_false
+
+    .end_with_true:
+        rax, 1
+        ret
+
+    .end_with_false:
+        rax, 0
+        ret
+     
 
 ; Выводит знаковое 8-байтовое число в десятичном формате 
 print_int:
-    xor rax, rax
+    mov rdx, 8 
+    ; TODO 
+    ; change it. Could I use pointer to r8 as a buffer? Why stack? 
+    push rdi
+    lea rsi, [rsp]       ; put pointer to string for write call
+    pop r8
+    
+    mov rax, 1          ; syscall number(for write = 1)
+    mov rdi, 1          ; stdout descriptor
+    syscall
+    
     ret
 
 ; Принимает два указателя на нуль-терминированные строки, возвращает 1 если они равны, 0 иначе
@@ -72,7 +163,10 @@ string_equals:
 
 ; Читает один символ из stdin и возвращает его. Возвращает 0 если достигнут конец потока
 read_char:
-    xor rax, rax
+    
+    
+    syscall
+    
     ret 
 
 ; Принимает: адрес начала буфера, размер буфера
@@ -126,7 +220,8 @@ string_copy:
     mov rcx, 0
     .loop: 
         cmp rcx, rax
-        ; TODO find out why it doesn't work with ja
+        ; TODO 
+        ; find out why it doesn't work with ja
         jg .end
        
         mov byte r8, [rdi + rcx]
