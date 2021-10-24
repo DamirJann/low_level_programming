@@ -68,55 +68,36 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    call uint_s1
-
-    ret
-
-uint_s1:
-    call read_char
-
-    cmp rax, '-'
-    je uint_s2
-
-    cmp rax, 0
-    je uint_s3
-
-
+    ; le
+    mov rdi, 23
+    mov r8, 10 ; volume(r8d) = 32 bits 
+               ; dividend contains in RDX:RAX
+               ; rax - quotient, rdx - remainder
+        
     push rdi
-    push rsi
-    push rdx
-    push rax
-    mov rdi, 1
-    mov rsi, 10
-    mov rdx, rax
-    call is_in_interval
-    cmp rax, 1
-    pop rdx
-    pop rsi
-    pop rdi
-    pop rax
 
-    je uint_s4
+    .loop:
+        pop rdi
+        
+        cmp rdi, 0
+        je .end
 
-    jmp .error
+        mov rax, edi
+        sar rdi, 32
+        mov rdx, edi
 
-    error:
+        div r8
+
+        push rax
+
+        mov rdi, rdx
+        call print_char
+
+        jmp .loop
+
+    .end:
         ret
-    
 
-
-    cmp rax,  
-
-
-    ret
-uint_s2:
-    ret
-uint_s3:
-    ret
-uint_s4:
-    ret
-uint_s5:
-    ret
 
 ; return 0 if number in interval [left border, right border)
 ; rdi - left border 
@@ -129,15 +110,15 @@ is_in_interval:
     jl .end_with_false
 
     ; check if number >= rigth boreder
-    cmp rdx, right_border
+    cmp rdx, rsi
     jge .end_with_false
 
     .end_with_true:
-        rax, 1
+        mov rax, 1
         ret
 
     .end_with_false:
-        rax, 0
+        mov rax, 0
         ret
      
 
