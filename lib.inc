@@ -68,8 +68,9 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    ; le
-    mov rdi, 23
+    
+    mov rdi, 41
+
     mov r8, 10 ; volume(r8d) = 32 bits 
                ; dividend contains in RDX:RAX
                ; rax - quotient, rdx - remainder
@@ -82,16 +83,20 @@ print_uint:
         cmp rdi, 0
         je .end
 
-        mov rax, edi
+        mov eax, edi
         sar rdi, 32
-        mov rdx, edi
+        mov edx, edi
 
         div r8
 
         push rax
 
+        add rdx, '0'
         mov rdi, rdx
+        
+        push r8
         call print_char
+        pop r8
 
         jmp .loop
 
