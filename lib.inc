@@ -70,14 +70,29 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    
-    mov rdi, 1234567
+    mov rdi, -1
     mov r9, 0
     mov r8, 10 ; volume(r8d) = 32 bits 
                ; dividend contains in RDX:RAX
                ; rax - quotient, rdx - remainder
     add rsp, 64
     push rdi
+
+    .check_if_negative:
+        mov rdi, 123
+        cmp rdi, 0
+        jnl .loop
+        
+        push rdi
+        jmp .add_negative_sign_to_result
+        
+    .add_negative_sign_to_result:
+        sub rsp, 64
+        mov [rsp + r9], byte '-'
+        add rsp, 64
+        add r9, 1
+        
+    push rdi    
 
     .loop:
         pop rdi
@@ -121,27 +136,31 @@ reverse_null_terminated_string:
 
     mov r8, 0
     mov r9, rax
-    sub r9, 2
+    sub r9, 1
     
+    
+
     .loop:
         
         .check_if_loop_finished:
             cmp r8, r9
             jg .end
+            je .end
 
+        ; TODO
+        ; why if i use mov from r10 to [rdi] it write null symbol
+        mov  r10b,  [rdi + r8]
+        mov  r11b,  [rdi + r9]
+
+        mov [rdi + r8],  r11b
+        mov [rdi + r9],  r10b
         
-
-        mov r10, [rdi + r8]
-        mov r11, [rdi + r9]
-        
-        mov [rdi + r8], r11
-        mov [rdi + r9], r10
-
         inc r8
         dec r9
         
         jmp .loop
-    
+
+
     .end
         ret
 
@@ -252,8 +271,8 @@ string_copy:
         ; find out why it doesn't work with ja
         jg .end
        
-        mov byte r8, [rdi + rcx]
-        mov [rsi + rcx], byte r8
+        mov r8, [rdi + rcx]
+        mov [rsi + rcx], r8
     
         inc rcx
         jmp .loop 
