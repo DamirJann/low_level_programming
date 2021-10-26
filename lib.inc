@@ -10,13 +10,15 @@ exit:
 ; arg1 - rdi(pointer to string)
 ; ret val - rax(size of string)
 string_length:
-    xor rax, rax
+    mov rax, 0
     .loop:
         ; [rdi+rax]  ~ *(s + i)
-        cmp byte [rdi + rax], 0
-        je .end
-
+        .check_if_end_of_string:
+            cmp byte [rdi + rax], 0
+            je .end
+        
         inc rax
+
         jmp .loop
 
     .end:
@@ -69,38 +71,78 @@ print_newline:
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
     
-    mov rdi, 41
-
+    mov rdi, 1234567
+    mov r9, 0
     mov r8, 10 ; volume(r8d) = 32 bits 
                ; dividend contains in RDX:RAX
                ; rax - quotient, rdx - remainder
-        
+    add rsp, 64
     push rdi
 
     .loop:
         pop rdi
         
-        cmp rdi, 0
-        je .end
+        .check_if_zero:
+            cmp rdi, 0
+            je .add_terminal_symbol_to_result
 
-        mov eax, edi
-        sar rdi, 32
-        mov edx, edi
+        .prepare_and_divide:
+            mov eax, edi
+            sar rdi, 32
+            mov edx, edi
+            div r8
 
-        div r8
+        .add_new_symbol_to_result:
+            sub rsp, 64
+            add rdx, '0'
+            mov [rsp + r9], rdx
+            add rsp, 64
+            add r9, 1
 
         push rax
-
-        add rdx, '0'
-        mov rdi, rdx
-        
-        push r8
-        call print_char
-        pop r8
-
         jmp .loop
 
+    .add_terminal_symbol_to_result:
+        mov [rsp + r9], byte 0
+        jmp .print_result
+
+    .print_result:
+        sub rsp, 64
+        mov rdi, rsp
+        call reverse_null_terminated_string
+        call print_string
+
     .end:
+        ret
+
+reverse_null_terminated_string:
+    
+    call string_length
+
+    mov r8, 0
+    mov r9, rax
+    sub r9, 2
+    
+    .loop:
+        
+        .check_if_loop_finished:
+            cmp r8, r9
+            jg .end
+
+        
+
+        mov r10, [rdi + r8]
+        mov r11, [rdi + r9]
+        
+        mov [rdi + r8], r11
+        mov [rdi + r9], r10
+
+        inc r8
+        dec r9
+        
+        jmp .loop
+    
+    .end
         ret
 
 
