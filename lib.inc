@@ -142,13 +142,24 @@ print_uint:
 
     .print_result:
         sub rsp, 64
-
         mov rdi, rsp 
-        add rdi, 1
-        call reverse_null_terminated_string
+        
+        cmp [rsp], byte '-'
+        je .reverse_negative 
+        jmp .reverse_positive
 
-        sub rdi, 1
-        call print_string
+        .reverse_negative: 
+            add rdi, 1
+            call reverse_null_terminated_string
+            sub rdi, 1
+            jmp .print
+
+        .reverse_positive:
+            call reverse_null_terminated_string
+            jmp .print
+        
+        .print: 
+            call print_string
 
 
     .end:
