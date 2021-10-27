@@ -70,29 +70,44 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    mov rdi, -1
     mov r9, 0
     mov r8, 10 ; volume(r8d) = 32 bits 
                ; dividend contains in RDX:RAX
                ; rax - quotient, rdx - remainder
     add rsp, 64
-    push rdi
+    
 
     .check_if_negative:
-        mov rdi, 123
+
         cmp rdi, 0
-        jnl .loop
+        jl .handle_negative
+        jmp .handle_positive
         
+    .handle_negative:
+
+        .multiply_by_minus_one: 
+            ; EAX * 32 bit source = EDX:EAX
+            mov r10d, -1
+            mov eax, edi 
+            mul r10d
+            mov edi, edx
+            sal rdi, 32
+            mov edi, eax
+
+
+            
+        .add_negative_sign_to_result:
+            sub rsp, 64
+            mov [rsp], byte '-'
+            add rsp, 64
+            add r9, 1 
+        
+        jmp .handle_positive
+
+    .handle_positive:
         push rdi
-        jmp .add_negative_sign_to_result
-        
-    .add_negative_sign_to_result:
-        sub rsp, 64
-        mov [rsp + r9], byte '-'
-        add rsp, 64
-        add r9, 1
-        
-    push rdi    
+        jmp .loop
+          
 
     .loop:
         pop rdi
@@ -107,7 +122,7 @@ print_uint:
             mov edx, edi
             div r8
 
-        .add_new_symbol_to_result:
+        .add_new_digit_to_result:
             sub rsp, 64
             add rdx, '0'
             mov [rsp + r9], rdx
@@ -115,17 +130,26 @@ print_uint:
             add r9, 1
 
         push rax
+
         jmp .loop
 
     .add_terminal_symbol_to_result:
+        sub rsp, 64
         mov [rsp + r9], byte 0
+        add rsp, 64
+        add r9, 1 
         jmp .print_result
 
     .print_result:
         sub rsp, 64
-        mov rdi, rsp
+
+        mov rdi, rsp 
+        add rdi, 1
         call reverse_null_terminated_string
+
+        sub rdi, 1
         call print_string
+
 
     .end:
         ret
@@ -142,7 +166,7 @@ reverse_null_terminated_string:
 
     .loop:
         
-        .check_if_loop_finished:
+        .check_if_loop__is_finished:
             cmp r8, r9
             jg .end
             je .end
