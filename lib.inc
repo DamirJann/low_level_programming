@@ -70,134 +70,61 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
+    mov rdi, 123
+
     mov r9, 0
-    mov r8, 10 ; volume(r8d) = 32 bits 
-               ; dividend contains in RDX:RAX
-               ; rax - quotient, rdx - remainder
-    add rsp, 64
+    mov r8, 10 
+    mov rax, rdi
+    mov rdi, rsp
+
+    .allocate_buffer:
+        sub rsp, 21
+
     
+    push rdi
+    push r8
+    push r9
+    mov rdi, rax
+    call transfer_to_uint
+    pop r9
+    pop r8
+    pop rdi
 
-    .check_if_negative:
-
-        cmp rdi, 0
-        jl .handle_negative
-        jmp .handle_positive
-        
-    .handle_negative:
-
-        .multiply_by_minus_one: 
-            ; EAX * 32 bit source = EDX:EAX
-            mov r10d, -1
-            mov eax, edi 
-            mul r10d
-            mov edi, edx
-            sal rdi, 32
-            mov edi, eax
-
-
-            
-        .add_negative_sign_to_result:
-            sub rsp, 64
-            mov [rsp], byte '-'
-            add rsp, 64
-            add r9, 1 
-        
-        jmp .handle_positive
-
-    .handle_positive:
-        push rdi
-        jmp .loop
-          
-
-    .loop:
-        pop rdi
-        
-        .check_if_zero:
-            cmp rdi, 0
-            je .add_terminal_symbol_to_result
-
-        .prepare_and_divide:
-            mov eax, edi
-            sar rdi, 32
-            mov edx, edi
-            div r8
-
-        .add_new_digit_to_result:
-            sub rsp, 64
-            add rdx, '0'
-            mov [rsp + r9], rdx
-            add rsp, 64
-            add r9, 1
-
-        push rax
-
-        jmp .loop
 
     .add_terminal_symbol_to_result:
-        sub rsp, 64
-        mov [rsp + r9], byte 0
-        add rsp, 64
-        add r9, 1 
-        jmp .print_result
+        dec rdi
+        mov [rdi], byte 0
 
-    .print_result:
-        sub rsp, 64
-        mov rdi, rsp 
+    dec rdi
+    mov [rdi], byte '3'
+
+    .loop:
+        ; volume(r8) = 64 bits 
+        ; dividend contains in RDX:RAX
+        ; rax - quotient, rdx - remainder
+        div r8
+        call print_string
         
-        cmp [rsp], byte '-'
-        je .reverse_negative 
-        jmp .reverse_positive
+        .add_new_digit_to_result:
+            dec rdi
+            add rdx, '0'
+            mov [rdi], rdx
+            
+   
+        .check_if_zero:
+            cmp rax, 0
+            jne .loop
 
-        .reverse_negative: 
-            add rdi, 1
-            call reverse_null_terminated_string
-            sub rdi, 1
-            jmp .print
 
-        .reverse_positive:
-            call reverse_null_terminated_string
-            jmp .print
-        
-        .print: 
-            call print_string
 
+    call print_string
+
+    .free_buffer:
+        add rsp, 21
 
     .end:
         ret
 
-reverse_null_terminated_string:
-    
-    call string_length
-
-    mov r8, 0
-    mov r9, rax
-    sub r9, 1
-    
-    
-
-    .loop:
-        
-        .check_if_loop__is_finished:
-            cmp r8, r9
-            jg .end
-            je .end
-
-        ; TODO
-        ; why if i use mov from r10 to [rdi] it write null symbol
-        mov  r10b,  [rdi + r8]
-        mov  r11b,  [rdi + r9]
-
-        mov [rdi + r8],  r11b
-        mov [rdi + r9],  r10b
-        
-        inc r8
-        dec r9
-        
-        jmp .loop
-
-
-    .end
-        ret
 
 
 ; return 0 if number in interval [left border, right border)
@@ -205,6 +132,9 @@ reverse_null_terminated_string:
 ; rsi - right border
 ; rdx - number
 ; rax - return value, 0 - false, 1 - true
+
+transfer_to_uint:
+    ret
 is_in_interval:
     ; check if number < left_border
     cmp rdx, rdi
@@ -322,4 +252,6 @@ string_copy:
 
 
 
-    
+ _start:
+    mov rdi,  '4'
+    call print_char    
