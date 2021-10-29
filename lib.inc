@@ -70,7 +70,6 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    mov rdi, 123
 
     mov r9, 0
     mov r8, 10 
@@ -80,7 +79,6 @@ print_uint:
     .allocate_buffer:
         sub rsp, 21
 
-    
     push rdi
     push r8
     push r9
@@ -90,27 +88,23 @@ print_uint:
     pop r8
     pop rdi
 
-
     .add_terminal_symbol_to_result:
         dec rdi
         mov [rdi], byte 0
-
-    dec rdi
-    mov [rdi], byte '3'
 
     .loop:
         ; volume(r8) = 64 bits 
         ; dividend contains in RDX:RAX
         ; rax - quotient, rdx - remainder
-        div r8
-        call print_string
+        .prepare_and_divide:
+            mov rdx, 0
+            idiv r8
         
         .add_new_digit_to_result:
             dec rdi
             add rdx, '0'
-            mov [rdi], rdx
+            mov [rdi], dl
             
-   
         .check_if_zero:
             cmp rax, 0
             jne .loop
@@ -134,7 +128,11 @@ print_uint:
 ; rax - return value, 0 - false, 1 - true
 
 transfer_to_uint:
-    ret
+    mov rax, 0
+    add rax, rdi
+
+    .end
+        ret
 is_in_interval:
     ; check if number < left_border
     cmp rdx, rdi
@@ -155,19 +153,17 @@ is_in_interval:
 
 ; Выводит знаковое 8-байтовое число в десятичном формате 
 print_int:
-    mov rdx, 8 
-    ; TODO 
-    ; change it. Could I use pointer to r8 as a buffer? Why stack? 
-    push rdi
-    lea rsi, [rsp]       ; put pointer to string for write call
-    pop r8
-    
-    mov rax, 1          ; syscall number(for write = 1)
-    mov rdi, 1          ; stdout descriptor
-    syscall
-    
-    ret
-
+    mov rdi, rsp
+    sub rsp, 21
+    dec rdi
+    mov [rdi], byte 0
+    dec rdi
+    mov [rdi], byte '1'
+    dec rdi
+    mov [rdi], byte '-'
+    call print_string 
+    add rsp, 21
+    ret 
 ; Принимает два указателя на нуль-терминированные строки, возвращает 1 если они равны, 0 иначе
 string_equals:
     xor rax, rax
@@ -250,8 +246,3 @@ string_copy:
     .end:
         ret
 
-
-
- _start:
-    mov rdi,  '4'
-    call print_char    
