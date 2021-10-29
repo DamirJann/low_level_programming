@@ -1,6 +1,5 @@
 section .text
  
- 
 ; Принимает код возврата и завершает текущий процесс
 exit: 
     xor rax, rax,
@@ -153,17 +152,40 @@ is_in_interval:
 
 ; Выводит знаковое 8-байтовое число в десятичном формате 
 print_int:
-    mov rdi, rsp
-    sub rsp, 21
-    dec rdi
-    mov [rdi], byte 0
-    dec rdi
-    mov [rdi], byte '1'
-    dec rdi
-    mov [rdi], byte '-'
-    call print_string 
-    add rsp, 21
-    ret 
+
+    cmp rdi, 0
+    jl .handle_negative
+    jmp .print
+
+    .handle_negative:
+
+        .multiply_by_minus_one: 
+            mov rax, rdi
+            mov rdi, 0
+            sub rdi, rax
+
+
+            
+
+        .print_negative_sign:
+            push rdi
+            push rax 
+            mov dil, '-'
+            call print_char 
+            pop rax
+            pop rdi
+  
+
+    .print:
+        call print_uint
+        
+    
+
+    .end
+        ret 
+
+
+
 ; Принимает два указателя на нуль-терминированные строки, возвращает 1 если они равны, 0 иначе
 string_equals:
     xor rax, rax
@@ -171,11 +193,22 @@ string_equals:
 
 ; Читает один символ из stdin и возвращает его. Возвращает 0 если достигнут конец потока
 read_char:
+    .allocate_buffer:
+        sub rsp, 1
     
-    
+    mov rdx, 1  
+    mov rsi, rsp        ; put pointer to string for read call
+    mov rax, 0         ; syscall number(for read = 0)
+    mov rdi, 0          ; stdout descriptor
     syscall
     
-    ret 
+    mov rax, [rsi]
+    
+    .free_allocated_mem_for_buffer:
+        add rsp, 1
+
+    .end
+        ret 
 
 ; Принимает: адрес начала буфера, размер буфера
 ; Читает в буфер слово из stdin, пропуская пробельные символы в начале, .
@@ -186,6 +219,30 @@ read_char:
 ; Эта функция должна дописывать к слову нуль-терминатор
 
 read_word:
+    mov r10, 0
+    .loop:
+        .skip_if_space:
+            cmp [rdi], 0x20
+            je .read_next
+            cmp [rdi], 0x9
+            je .read_next
+            cmp [rdi], 0xA
+            je .read_next
+        
+        .check_if_overflow:
+            cmp r10b, 16
+            je 
+    
+
+        push rdi
+        call print_char
+        pop rdi
+
+
+        .read_next:
+            inc rdi
+            jmp .loop
+
     ret
  
 
@@ -245,4 +302,6 @@ string_copy:
     
     .end:
         ret
+
+
 
