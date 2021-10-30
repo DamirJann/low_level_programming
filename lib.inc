@@ -221,16 +221,16 @@ read_char:
 read_word:
     mov r10, 0
     .loop:
-        .skip_if_space:
-            cmp [rdi], 0x20
+        .skip_if_space: 
+            cmp [rdi], byte 0x20
             je .read_next
-            cmp [rdi], 0x9
+            cmp [rdi], byte 0x9
             je .read_next
-            cmp [rdi], 0xA
+            cmp [rdi], byte 0xA
             je .read_next
         
         .check_if_overflow:
-            cmp r10b, 16
+            cmp r10b, byte16
             je 
     
 
