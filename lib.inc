@@ -1,43 +1,54 @@
 section .text
- 
+
+SYS_NUM_READ  equ 0
+SYS_NUM_WRITE equ 1
+SYS_NUM_EXIT  equ 60
+
+FD_STDIN  equ 0
+FD_STDOUT equ 1
+FD_STDERR equ 2
+
+ASCII_SPACE equ 0x20
+ASCII_TABULATION equ 0x9
+ASCII_LINE_FEED equ 0xA
+ASCII_NULL equ 0
+
 ; Принимает код возврата и завершает текущий процесс
 exit: 
-    xor rax, rax,
-    ret 
+    mov     rax, SYS_NUM_EXIT          ; 'exit' syscall number
+    xor     rdi, rdi
 
 ; Принимает указатель на нуль-терминированную строку, возвращает её длину
 ; arg1 - rdi(pointer to string)
 ; ret val - rax(size of string)
 string_length:
-    mov rax, 0
+    mov rcx, 0
     .loop:
         ; [rdi+rax]  ~ *(s + i)
         .check_if_end_of_string:
-            cmp byte [rdi + rax], 0
+            cmp [rdi + rcx], byte ASCII_NULL
             je .end
         
-        inc rax
+        inc rcx
 
         jmp .loop
 
     .end:
+        mov rax, rcx
         ret
 
 ; Принимает указатель на нуль-терминированную строку, выводит её в stdout
-; print_string - caller-save. It means that we need to save rdi and rax? before execution string_length
 ; arg1 - rdi(pointer to string)
 print_string:
     push rdi
-
     call string_length 
-
     pop rdi
 
 
-    mov rdx, rax        ; take string length and put it for write call
-    mov rsi, rdi        ; put pointer to string for write call
-    mov rax, 1          ; syscall number(for write = 1)
-    mov rdi, 1          ; stdout descriptor
+    mov rdx, rax                 ; take string length and put it for write call
+    mov rsi, rdi                 ; put pointer to string for write call
+    mov rax, SYS_NUM_WRITE       ; syscall number(for write = 1)
+    mov rdi, FD_STDOUT           ; stdout descriptor
     
     syscall
     
@@ -45,24 +56,27 @@ print_string:
 
 ; Принимает код символа и выводит его в stdout
 print_char:
+    .allocate_mem_for_buffer
+        sub rsp, 1
 
-    mov rdx, 1  
-    
-    ; TODO 
-    ; change it. Could I use pointer to r8 as a buffer? Why stack? 
-    push rdi
-    lea rsi, [rsp]       ; put pointer to string for write call
-    pop r8
-    
-    mov rax, 1          ; syscall number(for write = 1)
-    mov rdi, 1          ; stdout descriptor
+    mov rdx, 1 
+    mov [rsp], dil
+    mov rsi, rsp                    ; put pointer to string for write call
+    mov rax, SYS_NUM_WRITE          ; syscall number(for write = 1)
+    mov rdi, FD_STDOUT              ; stdout descriptor
+
     syscall
     
-    ret
+    .free_mem_for_buffer:
+        add rsp, 1
+
+    .end 
+        ret
 
 ; Переводит строку (выводит символ с кодом 0xA)
 print_newline:
-    xor rax, rax
+    mov rdi, ASCII_LINE_FEED
+    call print_char
     ret
 
 ; Выводит беззнаковое 8-байтовое число в десятичном формате 
@@ -87,9 +101,9 @@ print_uint:
     pop r8
     pop rdi
 
-    .add_terminal_symbol_to_result:
+    .add_null_symbol_to_result:
         dec rdi
-        mov [rdi], byte 0
+        mov [rdi], byte ASCII_NULL
 
     .loop:
         ; volume(r8) = 64 bits 
@@ -129,7 +143,6 @@ print_uint:
 transfer_to_uint:
     mov rax, 0
     add rax, rdi
-
     .end
         ret
 is_in_interval:
@@ -164,9 +177,6 @@ print_int:
             mov rdi, 0
             sub rdi, rax
 
-
-            
-
         .print_negative_sign:
             push rdi
             push rax 
@@ -179,8 +189,6 @@ print_int:
     .print:
         call print_uint
         
-    
-
     .end
         ret 
 
@@ -195,14 +203,17 @@ string_equals:
 read_char:
     .allocate_buffer:
         sub rsp, 1
+        ; TODO read_word doesn't work without this line
+        mov [rsp], byte ASCII_NULL
     
     mov rdx, 1  
-    mov rsi, rsp        ; put pointer to string for read call
-    mov rax, 0         ; syscall number(for read = 0)
-    mov rdi, 0          ; stdout descriptor
+    mov rsi, rsp                  ; put pointer to string for read call
+    mov rax, SYS_NUM_READ         ; syscall number(for read = 0)
+    mov rdi, FD_STDIN             ; stdout descriptor
     syscall
     
-    mov rax, [rsi]
+    mov al, [rsi]
+
     
     .free_allocated_mem_for_buffer:
         add rsp, 1
@@ -217,33 +228,67 @@ read_char:
 ; При успехе возвращает адрес буфера в rax, длину слова в rdx.
 ; При неудаче возвращает 0 в rax
 ; Эта функция должна дописывать к слову нуль-терминатор
-
 read_word:
-    mov r10, 0
+    .skip_spaces_at_beginning:
+        .space_loop:
+            push rdi
+            push rsi
+            push rdx
+            call read_char
+            pop rdx
+            pop rsi
+            pop rdi 
+
+            cmp rax, ASCII_SPACE
+            je .space_loop
+            cmp rax, ASCII_TABULATION
+            je .space_loop
+            cmp rax, ASCII_LINE_FEED
+            je .space_loop
+
+    mov rcx, 0
     .loop:
-        .skip_if_space: 
-            cmp [rdi], byte 0x20
-            je .read_next
-            cmp [rdi], byte 0x9
-            je .read_next
-            cmp [rdi], byte 0xA
-            je .read_next
+       
+
+        .add_to_buffer:
+            mov [rdi + rcx], al
+    
+        .break_if_end_of_word:
+            cmp al, ASCII_NULL
+            je .ok
+            cmp al, ASCII_SPACE
+            je .ok
         
         .check_if_overflow:
-            cmp r10b, byte16
-            je 
-    
+            cmp rcx, rsi
+            je .err
 
-        push rdi
-        call print_char
-        pop rdi
+        .read_next: 
+            push rdi
+            push rcx
+            push rsi
+            push rdx
+            call read_char
+            pop rdx
+            pop rsi
+            pop rcx
+            pop rdi
 
-
-        .read_next:
-            inc rdi
+            inc rcx
             jmp .loop
 
-    ret
+    .err: 
+        mov rax, 0
+        jmp .end
+    
+    .ok:
+        mov rax, rdi
+        mov rdx, rcx
+
+        jmp .end
+
+    .end
+        ret
  
 
 ; Принимает указатель на строку, пытается
@@ -274,6 +319,7 @@ parse_int:
 ; arg3 - rdx(length of buffer);
 ; ret val1 - rax(length of buffer it is ok, otherwise, zero)
 string_copy:
+
     push rdi
     call string_length
     pop rdi
@@ -285,8 +331,6 @@ string_copy:
     mov rcx, 0
     .loop: 
         cmp rcx, rax
-        ; TODO 
-        ; find out why it doesn't work with ja
         jg .end
        
         mov r8, [rdi + rcx]
@@ -304,4 +348,39 @@ string_copy:
         ret
 
 
+global _start
 
+; _start: 
+;     .allocate_buffer:
+;         sub rsp, 1
+    
+;     mov rdx, 1  
+;     mov rsi, rsp        ; put pointer to string for read call
+;     mov rax, 1         ; syscall number(for read = 0)
+;     mov rdi, 0         ; stdout descriptor
+;     mov [rsp], byte '!'
+;     syscall
+    
+;     mov al, [rsi]
+
+;     .free_allocated_mem_for_buffer:
+;         add rsp, 1
+
+;     call read_char
+
+
+
+;     ; sub rsp, 21
+;     ; mov rdi, rsp
+;     ; mov rsi, 10
+;     ; call read_word
+
+;     ; mov rdi, rax
+
+;     ; call print_string
+
+
+;     ; add rsp, 21
+
+
+;     call exit
