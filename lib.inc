@@ -16,7 +16,7 @@ ASCII_NULL equ 0
 ; Принимает код возврата и завершает текущий процесс
 exit: 
     mov     rax, SYS_NUM_EXIT          ; 'exit' syscall number
-    xor     rdi, rdi
+    syscall
 
 ; Принимает указатель на нуль-терминированную строку, возвращает её длину
 ; arg1 - rdi(pointer to string)
@@ -299,45 +299,54 @@ read_word:
 parse_uint:
     mov rax, 0
     mov r11, 0
-    mov r10, 0
     mov rcx, 0
 
     .s0: 
         ; read next symbol
+        mov r10, 0
         mov r10b, [rdi + rcx]
         inc rcx
         sub r10b, '0'
-        
         ; go to the next state
-            ; s belongs to [0, 9] -> s2
-            push rdi
-            push r11
-            push r10
-            mov rdi, 0
-            mov rsi, 10
-            mov dl, r10b
-            call is_in_interval
-            pop r10
-            pop r11
-            pop rdi
-            cmp rax, 1
-            je .s1
-            ; othwerwise -> s3 (terminal and error state)
-            jmp .s3
+        
+        ; s belongs to [0, 9] -> s2
+        push rdi
+        push r11
+        push r10
+        push rcx
+
+        mov rdi, 0
+        mov rsi, 10
+        mov rdx, 0
+        mov dl, r10b
+        call is_in_interval
+
+        pop rcx
+        pop r10
+        pop r11
+        pop rdi
+
+        cmp al, 1
+        je .s1
+        ; othwerwise -> s3 (terminal and error state)
+        jmp .s3
 
     .s1: 
         ; handle digit 
         .multiply_by_10:
             ;r/m32 x EAX -> EDX:EAX 
             mov r8d, 10
+            mov rax, 0
             
             mov eax, r11d
             mul r8d
             ; r9 = right 32 bits of number 
             mov r9d, edx
             sal r9, 32
-            add r9d, eax
+            add r9, rax
             ; r11 = left 32 bits of number 
+            mov rax, 0
+
             sar r11, 32
             mov eax, r11d
             mul r8d
@@ -346,39 +355,46 @@ parse_uint:
 
             add r11, r9
 
-
-
-
         add r11, r10
         
         ; read next symbol
+        mov r10, 0
         mov r10b, [rdi + rcx]
         inc rcx
         sub r10b, '0'
-
         ; go to the next state
+        ; s belongs to [0, 9] -> s2
+        push rdi
+        push rcx
+        push r10
+        push r11
 
-            ; s belongs to [0, 9] -> s2
-            push rdi
-            mov rdi, 0
-            mov rsi, 10
-            mov dl, r10b
-            call is_in_interval
-            pop rdi
-            cmp rax, 1
-            je .s1
-            ; otherwise -> s2 (terminal)
-            jmp .s2
+        mov rdi, 0
+        mov rsi, 10
+        mov rdx, 0
+        mov dl, r10b
+        call is_in_interval
+
+        pop r11
+        pop r10
+        pop rcx
+        pop rdi
+
+        cmp rax, 1
+        je .s1
+        ; otherwise -> s2 (terminal)
+        jmp .s2
     
     ; terminal state
     .s2: 
         mov rax, r11
-        mov rdx, 1
+        mov rdx, rcx
+        dec rdx
         jmp .end
 
     ; terminal and error state
     .s3: 
-        mov rdx, 0
+        mov rdx, 99
         jmp .end
 
     .end
@@ -433,33 +449,35 @@ string_copy:
         ret
 
 
-global _start
+; global _start
 
-_start: 
-    ; .allocate_buffer:
-    ;     sub rsp, 20
+; _start: 
+
+;     .allocate_buffer:
+;         sub rsp, 20
     
-    ; mov [rsp], byte '1'
-    ; mov [rsp+1], byte '2' 
-    ; mov [rsp+2], byte '3' 
-    ; mov [rsp+3], byte '4' 
-    ; mov [rsp+4], byte '5' 
-    ; mov [rsp+5], byte '6' 
-    ; mov [rsp+6], byte '7' 
-    ; mov [rsp+7], byte '8' 
-    ; mov [rsp+8], byte '9' 
-    ; mov [rsp+9], byte '0' 
-    ; mov [rsp+10], byte '1' 
- 
-    ; mov rdi, rsp
-    ; call parse_uint
+;     mov [rsp], byte '5'
+;     mov [rsp+1], byte '2' 
+;     mov [rsp+2], byte '3' 
+;     mov [rsp+3], byte '4' 
+;     mov [rsp+4], byte '5' 
+;     mov [rsp+5], byte '6' 
+;     mov [rsp+6], byte '7' 
+;     mov [rsp+7], byte '8' 
+;     mov [rsp+8], byte '9' 
+;     mov [rsp+9], byte '0' 
+;     mov [rsp+10], byte '1'
+;     mov [rsp+11], byte '9' 
+;     mov [rsp+12], byte '9' 
+;     mov [rsp+13], byte '9' 
+;     mov [rsp+14], byte '9' 
+;     mov rdi, rsp
+;     call parse_uint
+;     mov rdi, rax
+;     call print_uint
 
-    ; .free_allocated_mem_for_buffer:
-    ;     add rsp, 20
-    mov rax, 0x200000000
-    mov r10d, 0x012345678     
-    add eax, r10d                  
-    mov rdi, rdi
-    call print_uint
-    call exit
+;     .free_allocated_mem_for_buffer:
+;         add rsp, 20
+    
+;     call exit
 
