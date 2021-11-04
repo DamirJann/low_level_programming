@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Assignment: Input/Output library in assembly
 ---
 Лабораторная работа: библиотека ввода-вывода на Assembler
@@ -50,3 +51,10 @@
 - Проверьте, что функции `parse_int`, `parse_uint` и `read_word` правильно работают когда ввод завершается с помощью `Ctrl-D`.
 
 Код решения занимает порядка 250 строк.
+
+=======
+# Низкоуровневое программирование
+### ИТМО - 2021 - осенний семестр
+
+lab 1 - [Assignment: Input/Output library in assembly](https://github.com/DamirJann/low_level_programming/tree/lab1)
+>>>>>>> ef21f2b59cd5fc7c793085f4133a1fcf0c1a13d1

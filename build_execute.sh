@@ -1,3 +1,3 @@
 #!/bin/sh
-./build_execute.sh
+./build.sh
 ./lib
