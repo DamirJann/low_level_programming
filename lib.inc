@@ -12,6 +12,9 @@ ASCII_SPACE equ 0x20
 ASCII_TABULATION equ 0x9
 ASCII_LINE_FEED equ 0xA
 ASCII_NULL equ 0
+ASCII_ZERO equ 48
+ASCII_MINUS equ 45
+
 
 ; Принимает код возврата и завершает текущий процесс
 exit: 
@@ -114,7 +117,7 @@ print_uint:
         
         .add_new_digit_to_result:
             dec rdi
-            add rdx, '0'
+            add rdx, ASCII_ZERO
             mov [rdi], dl
             
         .check_if_zero:
@@ -128,7 +131,6 @@ print_uint:
 
     .end:
         ret
-
 
 ; @@ Declaration : int transfer_to_uint(int number)
 ; @@ Uses:
@@ -199,8 +201,28 @@ print_int:
 
 ; Принимает два указателя на нуль-терминированные строки, возвращает 1 если они равны, 0 иначе
 string_equals:
-    xor rax, rax
-    ret
+    mov rcx, 0
+
+    .loop:
+        mov r8b, [rdi + rcx]
+        mov r9b, [rsi + rcx]
+        cmp r8b, r9b
+        jne .end_with_false
+        ; break if terminal
+        cmp r8b, byte ASCII_NULL
+        je .end_with_true
+
+        inc rcx
+        jmp .loop
+
+    .end_with_true:
+        mov rax, 1
+        jmp .end
+    .end_with_false:
+        mov rax, 0
+        jmp .end
+    .end:
+        ret
 
 ; Читает один символ из stdin и возвращает его. Возвращает 0 если достигнут конец потока
 read_char:
@@ -302,14 +324,13 @@ parse_uint:
     mov rcx, 0
 
     .s0: 
-        ; read next symbol
+        ; read the next token
         mov r10, 0
         mov r10b, [rdi + rcx]
         inc rcx
-        sub r10b, '0'
         ; go to the next state
         
-        ; s belongs to [0, 9] -> s2
+        ; token belongs to [0, 9] -> s1
         push rdi
         push r11
         push r10
@@ -318,6 +339,7 @@ parse_uint:
         mov rdi, 0
         mov rsi, 10
         mov rdx, 0
+        sub r10b, ASCII_ZERO
         mov dl, r10b
         call is_in_interval
 
@@ -355,15 +377,15 @@ parse_uint:
 
             add r11, r9
 
+        sub r10b, ASCII_ZERO
         add r11, r10
         
         ; read next symbol
         mov r10, 0
         mov r10b, [rdi + rcx]
         inc rcx
-        sub r10b, '0'
         ; go to the next state
-        ; s belongs to [0, 9] -> s2
+        ; token belongs to [0, 9] -> s1
         push rdi
         push rcx
         push r10
@@ -372,6 +394,7 @@ parse_uint:
         mov rdi, 0
         mov rsi, 10
         mov rdx, 0
+        sub r10b, ASCII_ZERO
         mov dl, r10b
         call is_in_interval
 
@@ -394,7 +417,7 @@ parse_uint:
 
     ; terminal and error state
     .s3: 
-        mov rdx, 99
+        mov rdx, 0
         jmp .end
 
     .end
@@ -409,16 +432,221 @@ parse_uint:
 ; Возвращает в rax: число, rdx : его длину в символах (включая знак, если он был) 
 ; rdx = 0 если число прочитать не удалось
 parse_int:
-    xor rax, rax
-    ret 
+
+    mov rax, 0
+    mov r11, 0
+    mov rcx, 0
+
+    .s0: 
+        ; read next symbol
+        mov r10, 0
+        mov r10b, [rdi + rcx]
+        inc rcx
+        ; go to the next state
+        
+        ; token belongs to ['1', '9'] -> s2
+        push rdi
+        push r11
+        push r10
+        push rcx
+
+        mov rdi, 1
+        mov rsi, 10
+        mov rdx, 0
+        sub r10b, ASCII_ZERO
+        mov dl, r10b
+        call is_in_interval
+
+        pop rcx
+        pop r10
+        pop r11
+        pop rdi
+
+        cmp al, 1
+        je .s2
+        ; token is equal to '0' -> s3
+        cmp r10b, ASCII_ZERO
+        je .s3
+        ; token is equal to '-' -> 
+        cmp r10b, ASCII_MINUS
+        je .s5
+        ; othwerwise -> s6 (terminal and error state)
+        jmp .s6
+
+    .s2:
+        ; handle digit 
+        ; multiply_by_10:
+        ;r/m32 x EAX -> EDX:EAX 
+        mov r8d, 10
+        mov rax, 0
+        
+        mov eax, r11d
+        mul r8d
+        ; r9 = right 32 bits of number 
+        mov r9d, edx
+        sal r9, 32
+        add r9, rax
+        ; r11 = left 32 bits of number 
+        mov rax, 0
+
+        sar r11, 32
+        mov eax, r11d
+        mul r8d
+        mov r11d, eax
+        sal r11, 32
+
+        add r11, r9
+
+        sub r10b, ASCII_ZERO
+        add r11, r10
+        
+        ; read next symbol
+        mov r10, 0
+        mov r10b, [rdi + rcx]
+        inc rcx
+        ; go to the next state
+        ; token belongs to ['0', '9'] -> s2
+        push rdi
+        push rcx
+        push r10
+        push r11
+
+        mov rdi, 0
+        mov rsi, 10
+        mov rdx, 0
+        sub r10b, ASCII_ZERO
+        mov dl, r10b
+        call is_in_interval
+
+        pop r11
+        pop r10
+        pop rcx
+        pop rdi
+
+        cmp rax, 1
+        je .s2
+        ; otherwise -> s1 (terminal)
+        jmp .s1
+    .s3:
+        ; otherwise -> s1
+        mov rax, 0
+        inc rcx
+        jmp .s1
+
+    .s4:
+        ; handle digit 
+        
+        ; multiply_by_10:
+        ;r/m32 x EAX -> EDX:EAX 
+        mov r8d, 10
+        mov rax, 0
+        
+        mov eax, r11d
+        mul r8d
+        ; r9 = right 32 bits of number 
+        mov r9d, edx
+        sal r9, 32
+        add r9, rax
+        ; r11 = left 32 bits of number 
+        mov rax, 0
+
+        sar r11, 32
+        mov eax, r11d
+        mul r8d
+        mov r11d, eax
+        sal r11, 32
+
+        add r11, r9
+    
+        sub r10b, ASCII_ZERO
+        add r11, r10
+        
+        ; read next symbol
+        mov r10, 0
+        mov r10b, [rdi + rcx]
+        inc rcx
+        ; go to the next state
+        ; token belongs to ['0', '9'] -> s4
+        push rdi
+        push rcx
+        push r10
+        push r11
+
+        mov rdi, 0
+        mov rsi, 10
+        mov rdx, 0
+        sub r10b, ASCII_ZERO
+        mov dl, r10b
+        call is_in_interval
+
+        pop r11
+        pop r10
+        pop rcx
+        pop rdi
+
+        cmp rax, 1
+        je .s4
+        ; otherwise -> s7 (terminal)
+        jmp .s7
+    .s5:
+        ; read next symbol
+        mov r10, 0
+        mov r10b, [rdi + rcx]
+        inc rcx
+        ; go to the next state
+        
+        ; token belongs to ['1', '9'] -> s2
+        push rdi
+        push r11
+        push r10
+        push rcx
+
+        mov rdi, 1
+        mov rsi, 10
+        mov rdx, 0
+        sub r10b, ASCII_ZERO
+        mov dl, r10b
+        call is_in_interval
+
+        pop rcx
+        pop r10
+        pop r11
+        pop rdi
+
+        cmp al, 1
+        je .s4
+        ; othwerwise -> s6 (terminal and error state)
+        jmp .s6
+
+    ; terminal state for positive numbers
+    .s1:
+        mov rax, r11
+        mov rdx, rcx
+        dec rdx
+        jmp .end
+    ; terminal and error state
+    .s6:
+        mov rdx, 0
+        jmp .end
+    ; terminal state for negative numbers
+    .s7:
+        ; transfer to negative
+        mov r10, 0
+        sub r10, r11
+        mov r11, r10
+
+
+
+        mov rax, r11
+        mov rdx, rcx
+        dec rdx
+        jmp .end
+    .end
+        ret 
 
 ; Принимает указатель на строку, указатель на буфер и длину буфера
 ; Копирует строку в буфер
 ; Возвращает длину строки если она умещается в буфер, иначе 0
-; arg1 - rdi(pointer to string)
-; arg2 - rsi(pointer to buffer)
-; arg3 - rdx(length of buffer);
-; ret val1 - rax(length of buffer it is ok, otherwise, zero)
 string_copy:
 
     push rdi
@@ -447,34 +675,3 @@ string_copy:
     
     .end:
         ret
-
-
-; _start: 
-
-;     .allocate_buffer:
-;         sub rsp, 20
-    
-;     mov [rsp], byte '5'
-;     mov [rsp+1], byte '2' 
-;     mov [rsp+2], byte '3' 
-;     mov [rsp+3], byte '4' 
-;     mov [rsp+4], byte '5' 
-;     mov [rsp+5], byte '6' 
-;     mov [rsp+6], byte '7' 
-;     mov [rsp+7], byte '8' 
-;     mov [rsp+8], byte '9' 
-;     mov [rsp+9], byte '0' 
-;     mov [rsp+10], byte '1'
-;     mov [rsp+11], byte '9' 
-;     mov [rsp+12], byte '9' 
-;     mov [rsp+13], byte '9' 
-;     mov [rsp+14], byte '9' 
-;     mov rdi, rsp
-;     call parse_uint
-;     mov rdi, rax
-;     call print_uint
-
-;     .free_allocated_mem_for_buffer:
-;         add rsp, 20
-    
-;     call exit
