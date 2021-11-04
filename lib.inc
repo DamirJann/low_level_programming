@@ -16,6 +16,7 @@ ASCII_NULL equ 0
 ; Принимает код возврата и завершает текущий процесс
 exit: 
     mov     rax, SYS_NUM_EXIT          ; 'exit' syscall number
+<<<<<<< HEAD
     syscall
 
 ; Принимает указатель на нуль-терминированную строку, возвращает её длину
@@ -251,7 +252,7 @@ read_word:
 
     mov rcx, 0
     .loop:
-
+       
         .add_to_buffer:
             mov [rdi + rcx], al
     
@@ -449,8 +450,6 @@ string_copy:
         ret
 
 
-; global _start
-
 ; _start: 
 
 ;     .allocate_buffer:
@@ -480,4 +479,3 @@ string_copy:
 ;         add rsp, 20
     
 ;     call exit
-
