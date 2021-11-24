@@ -25,19 +25,18 @@ exit:
 ; arg1 - rdi(pointer to string)
 ; ret val - rax(size of string)
 string_length:
-    mov rcx, 0
+    mov rax, 0
     .loop:
         ; [rdi+rax]  ~ *(s + i)
         .check_if_end_of_string:
-            cmp [rdi + rcx], byte ASCII_NULL
+            cmp [rdi + rax], byte ASCII_NULL
             je .end
         
-        inc rcx
+        inc rax
 
         jmp .loop
 
     .end:
-        mov rax, rcx
         ret
 
 ; Принимает указатель на нуль-терминированную строку, выводит её в stdout
@@ -94,15 +93,6 @@ print_uint:
     .allocate_buffer:
         sub rsp, 21
 
-    push rdi
-    push r8
-    push r9
-    mov rdi, rax
-    call transfer_to_uint
-    pop r9
-    pop r8
-    pop rdi
-
     .add_null_symbol_to_result:
         dec rdi
         mov [rdi], byte ASCII_NULL
@@ -130,17 +120,6 @@ print_uint:
         add rsp, 21
 
     .end:
-        ret
-
-; @@ Declaration : int transfer_to_uint(int number)
-; @@ Uses:
-; @@   rdi: 
-; @@ Output:
-; @@   rax: number, which was represent as unsigned int
-transfer_to_uint:
-    mov rax, 0
-    add rax, rdi
-    .end
         ret
 
 ; @@ Declaration : bool is_in_interval(int left_border, int right_border, int number)
@@ -177,10 +156,7 @@ print_int:
 
     .handle_negative:
 
-        .multiply_by_minus_one: 
-            mov rax, rdi
-            mov rdi, 0
-            sub rdi, rax
+        neg rdi
 
         .print_negative_sign:
             push rdi
@@ -281,6 +257,10 @@ read_word:
             cmp al, ASCII_NULL
             je .ok
             cmp al, ASCII_SPACE
+            je .ok
+            cmp al, ASCII_TABULATION
+            je .ok
+            cmp al, ASCII_LINE_FEED
             je .ok
         
         .check_if_overflow:
@@ -653,14 +633,14 @@ string_copy:
     call string_length
     pop rdi
 
+    mov rcx, 0
     ;string size > buffer size
     cmp rax, rdx
     ja .end_with_zero
 
-    mov rcx, 0
     .loop: 
         cmp rcx, rax
-        jg .end
+        jg .add_null_terminal
        
         mov r8, [rdi + rcx]
         mov [rsi + rcx], r8
@@ -668,9 +648,12 @@ string_copy:
         inc rcx
         jmp .loop 
 
-    
     .end_with_zero:
         mov rax, 0
+        jmp .add_null_terminal
+
+    .add_null_terminal:
+        mov [rsi + rcx], byte ASCII_NULL
         jmp .end
     
     .end:
