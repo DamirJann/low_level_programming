@@ -1,10 +1,14 @@
 
-all: word
+all: build
 
-	nasm -f elf64 -o preprocessed_word -e  word.inc
+build: dict.o lib.o main.o
+	ld -o build lib.o dict.o main.o
 
-word: 
-	nasm -f elf64 -o word.O word.inc
+dict.o: dict.asm
+	nasm -f elf64 -o dict.o dict.asm 
 
-preprocessed_word:
-	nasm -f elf64 -o preprocessed_word -e  word.inc
+lib.o: lib.asm
+	nasm -f elf64 -o lib.o lib.asm
+
+main.o: main.asm
+	nasm -f elf64 -o main.o main.asm

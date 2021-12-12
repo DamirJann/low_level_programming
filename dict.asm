@@ -1,8 +1,10 @@
+%include "dict.inc"
+
+extern string_equals
+
 section .text
 ASCII_NULL equ 0
 POINTER_SIZE equ 8
-
-external string_equals
 
 ; @@ Declaration : void* find_word(char* s, void* list)
 ; @@ Uses:
