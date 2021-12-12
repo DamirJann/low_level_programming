@@ -10,3 +10,5 @@ global parse_int
 global string_copy
 
 global string_equals
+
+global exit

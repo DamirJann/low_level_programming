@@ -1,14 +1,17 @@
+ASM=nasm
+ASMFLAGS=-f elf64
+LD=ld
 
-all: build
+all: build clean
 
-build: dict.o lib.o main.o
-	ld -o build lib.o dict.o main.o
+build: dict lib main
+	$(LD) -o build lib.o dict.o main.o
 
-dict.o: dict.asm
-	nasm -f elf64 -o dict.o dict.asm 
+%: %.asm
+	$(ASM) $(ASMFLAGS) -o $@.o $@.asm
 
-lib.o: lib.asm
-	nasm -f elf64 -o lib.o lib.asm
+run: build
+	./$<
 
-main.o: main.asm
-	nasm -f elf64 -o main.o main.asm
+clean: 
+	rm *.o

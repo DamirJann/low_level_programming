@@ -1,1 +1,2 @@
 global find_word
+global get_value_by_key
