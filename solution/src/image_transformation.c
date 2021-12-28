@@ -1,7 +1,6 @@
-#include "image_transformation.h"
-#include "abstract_image.h"
+#include "../include/image_transformation.h"
 
 /* создаёт копию изображения, которая повёрнута на 90 градусов */
-struct image rotate( struct image const source ){
-
+struct image rotate(struct image const source) {
+    return source;
 }
