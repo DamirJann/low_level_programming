@@ -55,8 +55,8 @@ enum write_status {
 
 enum write_status to_bmp(FILE *out, struct image const *img);
 
-struct bmp_header make_bmp_header(struct image);
+struct bmp_header make_bmp_header(struct image image);
 
-int calculate_byte_padding(uint64_t width);
+int calculate_padding(uint64_t bytes);
 
 #endif //GITHUB_BPM_IMAGE_H

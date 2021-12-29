@@ -8,16 +8,16 @@ void init_image(struct image *img, uint64_t width, uint64_t height) {
     img->data = malloc((width * height) * sizeof(struct pixel));
 
     for (uint64_t i = 0; i < width * height; i++) {
-        img->data[i] = (struct pixel) {.b = 0, .g = 0, .r = 0};
+        img->data[i] = ZERO_PIXEL;
     }
 }
 
-struct pixel get_pixel(const struct image image, uint64_t i, uint64_t j) {
-    return image.data[image.width * i + j];
+struct pixel get_pixel(const struct image image, uint64_t height, uint64_t width) {
+    return image.data[image.width * height + width];
 }
 
-void set_pixel(struct image image, uint64_t i, uint64_t j, struct pixel pixel) {
-    image.data[image.width * i + j] = pixel;
+void set_pixel(struct image image, uint64_t height, uint64_t width, struct pixel pixel) {
+    image.data[image.width * height + width] = pixel;
 }
 
 void destroy_image(struct image image) {

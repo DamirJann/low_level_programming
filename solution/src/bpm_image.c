@@ -1,6 +1,4 @@
 #include "../include/bpm_image.h"
-#include "../include/abstract_image.h"
-
 
 enum read_status from_bmp(FILE *in, struct image *img) {
     struct bmp_header header = {0};
@@ -13,7 +11,7 @@ enum read_status from_bmp(FILE *in, struct image *img) {
     }
 
     init_image(img, header.biWidth, header.biHeight);
-    int padding = calculate_byte_padding(img->width * sizeof(struct pixel));
+    int padding = calculate_padding(img->width * sizeof(struct pixel));
 
     for (uint64_t i = 0; i < img->height; i++) {
         if (fread(img->data + (img->width * i), sizeof(struct pixel), img->width, in) != img->width) {
@@ -32,17 +30,22 @@ enum write_status to_bmp(FILE *out, struct image const *img) {
         return WRITE_ERROR;
     }
 
-    int padding = calculate_byte_padding(img->width * sizeof(struct pixel));
+    int padding = calculate_padding(img->width * sizeof(struct pixel));
 
     for (uint64_t i = 0; i < img->height; i++) {
-        fwrite(img->data + (i * img->width), sizeof(struct pixel) * img->width, 1, out);
-        fwrite("0", 1, padding, out);
+        if (fwrite(img->data + (i * img->width), sizeof(struct pixel) , img->width, out) != img->width){
+            return WRITE_ERROR;
+        }
+
+        if (fseek(out, padding, SEEK_CUR) != 0){
+            return WRITE_ERROR;
+        }
     }
     return WRITE_OK;
 }
 
 struct bmp_header make_bmp_header(struct image image) {
-    int padding = calculate_byte_padding(image.height * sizeof(struct pixel));
+    int padding = calculate_padding(image.height * sizeof(struct pixel));
     uint64_t pixel_image_count = image.width * image.height;
 
     return (struct bmp_header) {
@@ -66,8 +69,8 @@ struct bmp_header make_bmp_header(struct image image) {
     };
 }
 
-int calculate_byte_padding(uint64_t width) {
-    return 4 - (int) width % 4;
+int calculate_padding(uint64_t bytes) {
+    return 4 - (int) bytes % 4;
 }
 
 
