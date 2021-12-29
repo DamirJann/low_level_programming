@@ -8,11 +8,11 @@
 
 void parse_args(int argc, char **argv, char **path_to_input, char **path_to_output) {
     if (argc - 1 < 2) {
-        fprintf(stderr, "Not enough parameters: got: %d, expected: 2\n", argc - 1);
+        fprintf(stderr, "%s not enough parameters: got: %d, expected: 2\n", error_log_pattern(),argc - 1);
         exit(EXIT_FAILURE);
     }
     if (argc - 1 > 2) {
-        fprintf(stderr, "Too many parameters: got: %d, expected: 2\n", argc - 1);
+        fprintf(stderr, "%s too many parameters: got: %d, expected: 2\n", error_log_pattern(),argc - 1);
         exit(EXIT_FAILURE);
     }
     *path_to_input = argv[1];
@@ -21,20 +21,13 @@ void parse_args(int argc, char **argv, char **path_to_input, char **path_to_outp
 }
 
 int main(int argc, char **argv) {
-    (void) argc;
-    (void) argv; // supress 'unused parameters' warning
-    char *path_to_input;
-    char *path_to_output;
+    (void) argc; (void) argv;
+    char *path_to_input, *path_to_output;
 
     parse_args(argc, argv, &path_to_input, &path_to_output);
 
-    FILE* input = fopen(path_to_input, "rb");
-    if  (input == NULL){
-        fprintf(stderr, "%s can't open file (\"%s\")\n", error_log_pattern(), path_to_input);
-        exit(EXIT_FAILURE);
-    } else{
-        fprintf(stdout, "%s successfully opened file (\"%s\")\n", info_log_pattern(), path_to_input);
-    }
+    FILE* input = open_file(path_to_input, "rb");
+    FILE* output = open_file(path_to_output, "wb");
 
     struct image image;
     if (from_bmp(input, &image) != READ_OK) {
@@ -44,10 +37,18 @@ int main(int argc, char **argv) {
         fprintf(stdout, "%s input file read (width = \"%lu\", height = \"%lu\")\n", info_log_pattern(), image.width, image.height);
     }
 
-    FILE* output = fopen(path_to_output, "wb");
-//    struct image rotated_image = rotate(image);
-    to_bmp(output, &image);
+    struct image rotated_image = rotate(image);
 
+    if (to_bmp(output, &rotated_image) != WRITE_OK){
+        fprintf(stderr, "%s can't write to output file\n", error_log_pattern());
+        exit(EXIT_FAILURE);
+    } else {
+        fprintf(stdout, "%s output file was written (width = \"%lu\", height = \"%lu\")\n", info_log_pattern(), rotated_image.width, rotated_image.height);
+    }
+
+    fclose(input);
+    fclose(output);
     return 0;
 }
+
 

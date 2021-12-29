@@ -8,4 +8,7 @@
 const char* info_log_pattern();
 const char* error_log_pattern();
 
+FILE* open_file(char*, char*);
+
+
 #endif //GITHUB_UTILS_H

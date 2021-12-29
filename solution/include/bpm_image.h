@@ -22,6 +22,7 @@ struct __attribute__((packed)) bmp_header{
 };
 
 
+
 /*  deserializer   */
 enum read_status {
     READ_OK = 0,
@@ -29,6 +30,18 @@ enum read_status {
     READ_INVALID_BITS,
     READ_INVALID_HEADER
     /* коды других ошибок  */
+};
+
+enum bmp_header_values{
+    B_F_RESERVED = 0,
+    B_F_TYPE = 19778,
+    BI_CLR_IMPORTANT = 0,
+    BI_CLR_USED = 0,
+    BI_COMPRESSION = 0,
+    BI_PLANES = 1,
+    BI_X_PELS_PER_METER = 2834,
+    BI_Y_PELS_PER_METER = 2834,
+    BI_SIZE = 40
 };
 
 enum read_status from_bmp(FILE *in, struct image *img);
@@ -41,6 +54,8 @@ enum write_status {
 };
 
 enum write_status to_bmp(FILE *out, struct image const *img);
+
+struct bmp_header make_bmp_header(struct image);
 
 int calculate_byte_padding(uint64_t width);
 
