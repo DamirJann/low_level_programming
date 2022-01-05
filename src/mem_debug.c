@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
-#include "mem_internals.h"
-#include "mem.h"
+#include "../include/mem_internals.h"
+#include "../include/mem.h"
 
 void debug_struct_info( FILE* f,
                                  void const* addr ) {
