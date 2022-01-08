@@ -23,7 +23,7 @@ struct test_info{
 };
 
 
-static struct test_result successful_simple_allocation_10_bytes_in_100_bytes_heap();
+static struct test_result successful_simple_allocation_25_bytes_in_100_bytes_heap();
 void run_all();
 
 
