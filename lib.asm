@@ -258,8 +258,7 @@ read_word:
         .break_if_end_of_word:
             cmp al, ASCII_NULL
             je .ok
-            ; cmp al, ASCII_SPACE
-            ; je .ok
+            
             cmp al, ASCII_TABULATION
             je .ok
             cmp al, ASCII_LINE_FEED

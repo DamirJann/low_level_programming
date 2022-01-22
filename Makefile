@@ -2,13 +2,15 @@ ASM=nasm
 ASMFLAGS=-f elf64
 LD=ld
 
+.PHONY: all clean run
+
 all: build clean
 
-build: dict lib main
-	$(LD) -o build lib.o dict.o main.o
+build: dict.o lib.o main.o
+	$(LD) -o build $^
 
-%: %.asm
-	$(ASM) $(ASMFLAGS) -o $@.o $@.asm
+%.o: %.asm
+	$(ASM) $(ASMFLAGS) -o $@ $^
 
 run: build
 	./$<
