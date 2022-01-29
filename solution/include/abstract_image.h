@@ -1,27 +1,34 @@
 #ifndef GITHUB_ABSTRACT_IMAGE_H
 #define GITHUB_ABSTRACT_IMAGE_H
+
 #include <bits/stdint-uintn.h>
 #include <bits/types/FILE.h>
 #include <malloc.h>
 
-struct pixel {
+struct __attribute__ ((packed)) pixel {
     uint8_t b, g, r;
 };
 
-static struct pixel ZERO_PIXEL = (struct pixel) {.b = 0, .g = 0, .r = 0};
+struct point {
+    uint64_t x;
+    uint64_t y;
+};
 
 struct image {
     uint64_t width, height;
     struct pixel *data;
 };
 
-void init_image(struct image * img, uint64_t width, uint64_t height);
+void init_image(struct image *img, uint64_t width, uint64_t height);
 
 void destroy_image(struct image image);
 
-struct pixel get_pixel(struct image image, uint64_t height, uint64_t width);
+static struct pixel inline image_get_pixel(struct image image, struct point point) {
+    return image.data[image.width * point.y + point.x];
+}
 
-void set_pixel(struct image image, uint64_t height, uint64_t width, struct pixel pixel);
-
+static void inline image_set_pixel(struct image image, struct point point, struct pixel pixel) {
+    image.data[image.width * point.y + point.x] = pixel;
+}
 
 #endif //GITHUB_ABSTRACT_IMAGE_H

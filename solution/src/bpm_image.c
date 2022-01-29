@@ -1,5 +1,35 @@
 #include "../include/bpm_image.h"
 
+struct __attribute__((packed)) bmp_header{
+    uint16_t bfType;
+    uint32_t bfileSize;
+    uint32_t bfReserved;
+    uint32_t bOffBits;
+    uint32_t biSize;
+    uint32_t biWidth;
+    uint32_t biHeight;
+    uint16_t biPlanes;
+    uint16_t biBitCount;
+    uint32_t biCompression;
+    uint32_t biSizeImage;
+    uint32_t biXPelsPerMeter;
+    uint32_t biYPelsPerMeter;
+    uint32_t biClrUsed;
+    uint32_t biClrImportant;
+};
+
+enum bmp_header_values{
+    B_F_RESERVED = 0,
+    B_F_TYPE = 19778,
+    BI_CLR_IMPORTANT = 0,
+    BI_CLR_USED = 0,
+    BI_COMPRESSION = 0,
+    BI_PLANES = 1,
+    BI_X_PELS_PER_METER = 2834,
+    BI_Y_PELS_PER_METER = 2834,
+    BI_SIZE = 40
+};
+
 enum read_status from_bmp(FILE *in, struct image *img) {
     struct bmp_header header = {0};
     if (fread(&header, sizeof(struct bmp_header), 1, in) != 1) {
@@ -11,7 +41,7 @@ enum read_status from_bmp(FILE *in, struct image *img) {
     }
 
     init_image(img, header.biWidth, header.biHeight);
-    int padding = calculate_padding(img->width * sizeof(struct pixel));
+    int padding = calculate_padding(img->width);
 
     for (uint64_t i = 0; i < img->height; i++) {
         if (fread(img->data + (img->width * i), sizeof(struct pixel), img->width, in) != img->width) {
@@ -30,7 +60,7 @@ enum write_status to_bmp(FILE *out, struct image const *img) {
         return WRITE_ERROR;
     }
 
-    int padding = calculate_padding(img->width * sizeof(struct pixel));
+    int padding = calculate_padding(img->width);
 
     for (uint64_t i = 0; i < img->height; i++) {
         if (fwrite(img->data + (i * img->width), sizeof(struct pixel) , img->width, out) != img->width){
@@ -45,7 +75,7 @@ enum write_status to_bmp(FILE *out, struct image const *img) {
 }
 
 struct bmp_header make_bmp_header(struct image image) {
-    int padding = calculate_padding(image.height * sizeof(struct pixel));
+    int padding = calculate_padding(image.height);
     uint64_t pixel_image_count = image.width * image.height;
 
     return (struct bmp_header) {
@@ -69,8 +99,8 @@ struct bmp_header make_bmp_header(struct image image) {
     };
 }
 
-int calculate_padding(uint64_t bytes) {
-    return 4 - (int) bytes % 4;
+int static inline calculate_padding(uint64_t width) {
+    return 4 - (int) (width * sizeof(struct pixel)) % 4;
 }
 
 

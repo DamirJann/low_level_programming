@@ -4,34 +4,31 @@
 #include <string.h>
 #include <time.h>
 
+static char log_buffer[200] = {0};
+
 const char *error_log_pattern() {
-    static char s[300000] = {0};
     time_t t = time(NULL);
-    strftime(s, sizeof(s) - 1, "%a %b %d %T %Z %Y    error   ---   ", localtime(&t));
-    return s;
-
+    strftime(log_buffer, sizeof(log_buffer) - 1, "%a %b %d %T %Z %Y    error   ---   ", localtime(&t));
+    return log_buffer;
 }
-
 
 const char *info_log_pattern() {
-    static char s[30000] = {0};
     time_t t = time(NULL);
-    strftime(s, sizeof(s) - 1, "%a %b %d %T %Z %Y    info    ---   ", localtime(&t));
-    return s;
+    strftime(log_buffer, sizeof(log_buffer) - 1, "%a %b %d %T %Z %Y    info    ---   ", localtime(&t));
+    return log_buffer;
 }
 
-FILE *open_file(char *path_to_input, char *modes) {
-    FILE *input = fopen(path_to_input, modes);
+FILE *open_file(char *path, char *modes) {
+    FILE *input = fopen(path, modes);
     if (input == NULL) {
-        fprintf(stderr, "%s can't open file (\"%s\")\n", error_log_pattern(), path_to_input);
+        fprintf(stderr, "%s can't open file (\"%s\")\n", error_log_pattern(), path);
         exit(EXIT_FAILURE);
     } else {
-        fprintf(stdout, "%s successfully opened file (\"%s\")\n", info_log_pattern(), path_to_input);
+        fprintf(stdout, "%s successfully opened file (\"%s\")\n", info_log_pattern(), path);
     }
     return input;
 }
 
-
-
-
-
+struct arg_parsing_result error_arg_parsing_res(){
+    return (struct arg_parsing_result){.status = ERROR};
+}

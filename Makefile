@@ -1,6 +1,4 @@
 NAME := image-transformer
-PATH_TO_INPUT := tester/tests/3/input.bmp
-PATH_TO_OUTPUT := obj/tester/3.bmp
 
 ##### Compiler / analyzer common configuration.
 
