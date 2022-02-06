@@ -1,0 +1,4 @@
+Wed Dec 29 15:41:38 MSK 2021    info    ---    parameters parsed (input = "tester/tests/1/input.bmp", output = "obj/asan/tester/1.bmp")
+Wed Dec 29 15:41:38 MSK 2021    info    ---    successfully opened file ("tester/tests/1/input.bmp")
+Wed Dec 29 15:41:38 MSK 2021    info    ---    successfully opened file ("obj/asan/tester/1.bmp")
+Wed Dec 29 15:41:38 MSK 2021    info    ---    input file read (width = 1518, height = 941)

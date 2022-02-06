@@ -1,0 +1,8 @@
+# ninja log v5
+1	70	1642343333501844651	CMakeFiles/github.dir/solution/src/bpm_image.c.o	baa86e613b4bc0ee
+1	71	1642343333505844579	CMakeFiles/github.dir/solution/src/utils.c.o	b6b42b64a5b30afc
+0	70	1642343333505844579	CMakeFiles/github.dir/solution/src/main.c.o	3745ce1371f8382
+0	14	1643460601461494320	build.ninja	3d2e68edeae9f529
+0	70	1642343333497844721	CMakeFiles/github.dir/solution/src/abstract_image.c.o	b6541dbaf7cda931
+71	123	1642343333593843010	github	a910a0c1c19c146
+1	69	1642343333497844721	CMakeFiles/github.dir/solution/src/image_transformation.c.o	6abf6e1c6ba77f73

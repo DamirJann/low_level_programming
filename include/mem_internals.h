@@ -1,12 +1,11 @@
 #ifndef _MEM_INTERNALS_
 #define _MEM_INTERNALS_
 
-#include <stddef.h>
-#include <stdbool.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #define REGION_MIN_SIZE (2 * 4096)
-#define HEAP_CAPABILITY_COEFFICIENT 1.32f
 
 struct region { void* addr; size_t size; bool extends; };
 static const struct region REGION_INVALID = {0};
@@ -25,6 +24,5 @@ struct block_header {
 
 inline block_size size_from_capacity( block_capacity cap ) { return (block_size) {cap.bytes + offsetof( struct block_header, contents ) }; }
 inline block_capacity capacity_from_size( block_size sz ) { return (block_capacity) {sz.bytes - offsetof( struct block_header, contents ) }; }
-
 
 #endif
